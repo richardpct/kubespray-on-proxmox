@@ -66,6 +66,15 @@ resource "proxmox_virtual_environment_vm" "ubuntu_template" {
     size         = 20
   }
 
+  disk {
+    datastore_id = "local-lvm"
+    file_format  = "raw"
+    interface    = "virtio1"
+    iothread     = true
+    discard      = "on"
+    size         = 40
+  }
+
   initialization {
     ip_config {
       ipv4 {
@@ -78,6 +87,36 @@ resource "proxmox_virtual_environment_vm" "ubuntu_template" {
 
   network_device {
     bridge = "vmbr0"
+  }
+}
+
+resource "proxmox_virtual_environment_vm" "load-balancer" {
+  name      = "load-balancer"
+  node_name = "pve"
+
+  clone {
+    vm_id = proxmox_virtual_environment_vm.ubuntu_template.id
+  }
+
+  agent {
+    enabled = true
+  }
+
+  memory {
+    dedicated = 2048
+  }
+
+  initialization {
+    dns {
+      servers = [var.nameserver]
+    }
+
+    ip_config {
+      ipv4 {
+        address = "192.168.1.99/24"
+        gateway = var.gateway
+      }
+    }
   }
 }
 
@@ -187,6 +226,8 @@ sed -i -e 's/# ingress_nginx_host_network: false/ingress_nginx_host_network: fal
 sed -i -e 's/# ingress_nginx_service_type: LoadBalancer/ingress_nginx_service_type: NodePort/' inventory/proxmox/group_vars/k8s_cluster/addons.yml
 sed -i -e 's/# ingress_nginx_service_nodeport_http: 30080/ingress_nginx_service_nodeport_http: 30080/' inventory/proxmox/group_vars/k8s_cluster/addons.yml
 sed -i -e 's/# ingress_nginx_service_nodeport_https: 30081/ingress_nginx_service_nodeport_https: 30443/' inventory/proxmox/group_vars/k8s_cluster/addons.yml
+sed -i -e 's/# ingress_nginx_extra_args:/ingress_nginx_extra_args:/' inventory/proxmox/group_vars/k8s_cluster/addons.yml
+sed -i -e 's!#   - --default-ssl-certificate=default/foo-tls!  - --default-ssl-certificate=default/foo-tls!' inventory/proxmox/group_vars/k8s_cluster/addons.yml
 sed -i -e 's/kube_network_plugin: calico/kube_network_plugin: cilium/' inventory/proxmox/group_vars/k8s_cluster/k8s-cluster.yml
 sed -i -e 's/# cilium_kube_proxy_replacement: partial/cilium_kube_proxy_replacement: strict/' inventory/proxmox/group_vars/k8s_cluster/k8s-net-cilium.yml
 
