@@ -5,8 +5,8 @@ locals {
   worker_nb      = 3
   master_cores   = 2
   worker_cores   = 2
-  master_memory  = 2048
-  worker_memory  = 6144
+  master_memory  = 4096
+  worker_memory  = 8192
   master_disk    = "20G"
   worker_disk    = "20G"
 }
