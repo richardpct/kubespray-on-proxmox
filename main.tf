@@ -2,7 +2,7 @@ resource "proxmox_vm_qemu" "k8s-control-plane" {
   count            = local.master_nb
   vmid             = "10${count.index}"
   name             = "k8s-control-plane-${count.index}"
-  target_node      = "pve01"
+  target_node      = "pve0${count.index + 1}"
   agent            = 1
   cores            = local.master_cores
   memory           = local.master_memory
@@ -56,7 +56,7 @@ resource "proxmox_vm_qemu" "k8s-worker" {
   count            = local.worker_nb
   vmid             = "20${count.index}"
   name             = "k8s-worker-${count.index}"
-  target_node      = "pve01"
+  target_node      = "pve0${count.index + 1}"
   agent            = 1
   cores            = local.worker_cores
   memory           = local.worker_memory
