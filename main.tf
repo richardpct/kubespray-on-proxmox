@@ -30,7 +30,7 @@ resource "proxmox_vm_qemu" "k8s-control-plane" {
     scsi {
       scsi0 {
         disk {
-          storage = "local-lvm"
+          storage = "rbd"
           size    = local.master_disk
         }
       }
@@ -39,7 +39,7 @@ resource "proxmox_vm_qemu" "k8s-control-plane" {
       # Some images require a cloud-init disk on the IDE controller, others on the SCSI or SATA controller
       ide1 {
         cloudinit {
-          storage = "local-lvm"
+          storage = "rbd"
         }
       }
     }
@@ -85,7 +85,7 @@ resource "proxmox_vm_qemu" "k8s-worker" {
       scsi0 {
         # We have to specify the disk from our template, else Terraform will think it's not supposed to be there
         disk {
-          storage = "local-lvm"
+          storage = "rbd"
           # The size of the disk should be at least as big as the disk in the template. If it's smaller, the disk will be recreated
           size    = local.worker_disk
         }
@@ -95,7 +95,7 @@ resource "proxmox_vm_qemu" "k8s-worker" {
       # Some images require a cloud-init disk on the IDE controller, others on the SCSI or SATA controller
       ide1 {
         cloudinit {
-          storage = "local-lvm"
+          storage = "rbd"
         }
       }
     }
@@ -145,6 +145,9 @@ for ((i=0; i < ${local.worker_nb}; i++)); do
   echo "k8s-worker-$i" >> inventory/proxmox/inventory.ini
 done
 
+sed -i -e 's/loadbalancer_apiserver_port: 6443/#loadbalancer_apiserver_port: 6443/' inventory/proxmox/group_vars/all/all.yml
+sed -i -e 's/loadbalancer_apiserver_healthcheck_port: 8081/#loadbalancer_apiserver_healthcheck_port: 8081/' inventory/proxmox/group_vars/all/all.yml
+sed -i -e 's/# loadbalancer_apiserver_localhost: true/loadbalancer_apiserver_localhost: false/' inventory/proxmox/group_vars/all/all.yml
 sed -i -e 's/helm_enabled: false/helm_enabled: true/' inventory/proxmox/group_vars/k8s_cluster/addons.yml
 sed -i -e 's/ingress_nginx_enabled: false/ingress_nginx_enabled: true/' inventory/proxmox/group_vars/k8s_cluster/addons.yml
 sed -i -e 's/metrics_server_enabled: false/metrics_server_enabled: true/' inventory/proxmox/group_vars/k8s_cluster/addons.yml
